@@ -71,3 +71,35 @@ exports.getUserById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await Usuario.findByPk(id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    
+    // Si envían password, hashearla
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(req.body.password, 10);
+    }
+    
+    await user.update(req.body);
+    res.json({
+      id: user.id, nombre: user.nombre, email: user.email, rol: user.rol
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await Usuario.findByPk(id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    await user.destroy();
+    res.json({ message: 'Usuario eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import * as authService from '../../services/auth.service';
 import Swal from 'sweetalert2';
-import { Container, Row, Col, Card, Form, Button, Tabs, Tab } from 'react-bootstrap';
 import '../../styles/Login.css';
 
 const Login = () => {
     const navigate = useNavigate();
     const { login: setAuth } = useAuth();
 
+    const [activeTab, setActiveTab] = useState('login');
     const [loginData, setLoginData] = useState({ email: '', password: '' });
     const [registerData, setRegisterData] = useState({ nombre: '', email: '', password: '', confirmPassword: '' });
     const [loading, setLoading] = useState(false);
@@ -31,10 +31,19 @@ const Login = () => {
         try {
             const response = await authService.login(loginData.email, loginData.password);
             setAuth(response.data.user, response.data.token);
-            Swal.fire('¡Éxito!', 'Sesión iniciada correctamente', 'success');
+            const Toast = Swal.mixin({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true,
+                background: '#1a1a2e', color: '#fff'
+            });
+            Toast.fire({ icon: 'success', title: 'Sesión iniciada correctamente' });
             navigate('/');
         } catch (error) {
-            Swal.fire('Error', error.response?.data?.error || 'Error al iniciar sesión', 'error');
+            Swal.fire({
+                title: 'Error',
+                text: error.response?.data?.error || 'Error al iniciar sesión',
+                icon: 'error',
+                confirmButtonColor: '#6366f1'
+            });
         } finally {
             setLoading(false);
         }
@@ -45,150 +54,217 @@ const Login = () => {
         setLoading(true);
 
         if (registerData.password !== registerData.confirmPassword) {
-            Swal.fire('Error', 'Las contraseñas no coinciden', 'error');
+            Swal.fire({
+                title: 'Error',
+                text: 'Las contraseñas no coinciden',
+                icon: 'error',
+                confirmButtonColor: '#6366f1'
+            });
             setLoading(false);
             return;
         }
 
         try {
-            const response = await authService.register({
+            await authService.register({
                 nombre: registerData.nombre,
                 email: registerData.email,
                 password: registerData.password,
                 rol: 'usuario'
             });
-            Swal.fire('¡Éxito!', 'Usuario registrado. Por favor inicia sesión', 'success');
-            setRegisterData({ nombre: '', email: '', password: '', confirmPassword: '' });
+            Swal.fire({
+                title: '¡Registro Exitoso!',
+                text: 'Tu cuenta ha sido creada. Por favor inicia sesión.',
+                icon: 'success',
+                confirmButtonColor: '#6366f1'
+            }).then(() => {
+                setActiveTab('login');
+                setRegisterData({ nombre: '', email: '', password: '', confirmPassword: '' });
+            });
         } catch (error) {
-            Swal.fire('Error', error.response?.data?.error || 'Error al registrar', 'error');
+            Swal.fire({
+                title: 'Error',
+                text: error.response?.data?.error || 'Error al registrar',
+                icon: 'error',
+                confirmButtonColor: '#6366f1'
+            });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Container className="login-container">
-            <Row className="justify-content-center align-items-center min-vh-100">
-                <Col xs={12} sm={10} md={8} lg={6} xl={5}>
-                    <Card className="shadow-lg border-0">
-                        <Card.Body className="p-5">
-                            <h2 className="text-center mb-4">
-                                <i className="bi bi-building"></i> ReservasApp
-                            </h2>
+        <div className="premium-login-wrapper">
+            <div className="premium-login-container">
+                {/* Banner Lateral */}
+                <div className="premium-banner">
+                    <div className="banner-content">
+                        <div className="logo-icon">
+                            <i className="bi bi-grid-1x2-fill"></i>
+                        </div>
+                        <h1>ReservasApp</h1>
+                        <p>Plataforma inteligente para la gestión de espacios y recursos organizacionales.</p>
+                        
+                        <div className="banner-features">
+                            <div className="feature-item">
+                                <i className="bi bi-check-circle-fill"></i>
+                                <span>Reservas al instante</span>
+                            </div>
+                            <div className="feature-item">
+                                <i className="bi bi-shield-fill-check"></i>
+                                <span>Sistema seguro y confiable</span>
+                            </div>
+                            <div className="feature-item">
+                                <i className="bi bi-graph-up-arrow"></i>
+                                <span>Optimización de recursos</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="banner-overlay"></div>
+                </div>
 
-                            <Tabs defaultActiveKey="login" id="auth-tabs" className="mb-4">
-                                <Tab eventKey="login" title="Iniciar Sesión">
-                                    <Form onSubmit={handleLogin} className="mt-4">
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Correo Electrónico</Form.Label>
-                                            <Form.Control
+                {/* Formulario */}
+                <div className="premium-form-section">
+                    <div className="form-content">
+                        <div className="form-header">
+                            <h2>{activeTab === 'login' ? 'Bienvenido de nuevo' : 'Crear nueva cuenta'}</h2>
+                            <p>{activeTab === 'login' ? 'Ingresa tus credenciales para continuar.' : 'Únete a nuestra plataforma hoy mismo.'}</p>
+                        </div>
+
+                        {/* Custom Sliding Tab Toggle */}
+                        <div className="custom-tab-toggle">
+                            <div 
+                                className={`toggle-slider ${activeTab === 'register' ? 'slide-right' : ''}`}
+                            ></div>
+                            <button 
+                                type="button"
+                                className={`tab-btn ${activeTab === 'login' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('login')}
+                            >
+                                Iniciar Sesión
+                            </button>
+                            <button 
+                                type="button"
+                                className={`tab-btn ${activeTab === 'register' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('register')}
+                            >
+                                Registrarse
+                            </button>
+                        </div>
+
+                        <div className="form-body">
+                            {activeTab === 'login' ? (
+                                <form onSubmit={handleLogin} className="premium-form fade-in-up">
+                                    <div className="input-group">
+                                        <label>Correo Electrónico</label>
+                                        <div className="input-wrapper">
+                                            <i className="bi bi-envelope"></i>
+                                            <input
                                                 type="email"
                                                 name="email"
                                                 value={loginData.email}
                                                 onChange={handleLoginChange}
-                                                placeholder="tu@email.com"
+                                                placeholder="ejemplo@correo.com"
                                                 required
                                             />
-                                        </Form.Group>
+                                        </div>
+                                    </div>
 
-                                        <Form.Group className="mb-4">
-                                            <Form.Label>Contraseña</Form.Label>
-                                            <Form.Control
+                                    <div className="input-group">
+                                        <label>Contraseña</label>
+                                        <div className="input-wrapper">
+                                            <i className="bi bi-lock"></i>
+                                            <input
                                                 type="password"
                                                 name="password"
                                                 value={loginData.password}
                                                 onChange={handleLoginChange}
-                                                placeholder="Contraseña"
+                                                placeholder="••••••••"
                                                 required
                                             />
-                                        </Form.Group>
-
-                                        <Button
-                                            variant="primary"
-                                            type="submit"
-                                            className="w-100"
-                                            disabled={loading}
-                                        >
-                                            {loading ? 'Cargando...' : 'Iniciar Sesión'}
-                                        </Button>
-                                    </Form>
-
-                                    <div className="text-center mt-3 text-muted">
-                                        <p>¿No tienes cuenta? Usa la pestaña de Registro</p>
+                                        </div>
+                                        <div className="forgot-password">
+                                            <a href="#/">¿Olvidaste tu contraseña?</a>
+                                        </div>
                                     </div>
-                                </Tab>
 
-                                <Tab eventKey="register" title="Registrarse">
-                                    <Form onSubmit={handleRegister} className="mt-4">
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Nombre Completo</Form.Label>
-                                            <Form.Control
+                                    <button type="submit" className="premium-btn primary-btn" disabled={loading}>
+                                        {loading ? <span className="loader"></span> : 'Acceder'}
+                                    </button>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleRegister} className="premium-form fade-in-up">
+                                    <div className="input-group">
+                                        <label>Nombre Completo</label>
+                                        <div className="input-wrapper">
+                                            <i className="bi bi-person"></i>
+                                            <input
                                                 type="text"
                                                 name="nombre"
                                                 value={registerData.nombre}
                                                 onChange={handleRegisterChange}
-                                                placeholder="Tu nombre"
+                                                placeholder="Juan Pérez"
                                                 required
                                             />
-                                        </Form.Group>
+                                        </div>
+                                    </div>
 
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Correo Electrónico</Form.Label>
-                                            <Form.Control
+                                    <div className="input-group">
+                                        <label>Correo Electrónico</label>
+                                        <div className="input-wrapper">
+                                            <i className="bi bi-envelope"></i>
+                                            <input
                                                 type="email"
                                                 name="email"
                                                 value={registerData.email}
                                                 onChange={handleRegisterChange}
-                                                placeholder="tu@email.com"
+                                                placeholder="ejemplo@correo.com"
                                                 required
                                             />
-                                        </Form.Group>
+                                        </div>
+                                    </div>
 
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Contraseña</Form.Label>
-                                            <Form.Control
+                                    <div className="input-group">
+                                        <label>Contraseña</label>
+                                        <div className="input-wrapper">
+                                            <i className="bi bi-lock"></i>
+                                            <input
                                                 type="password"
                                                 name="password"
                                                 value={registerData.password}
                                                 onChange={handleRegisterChange}
-                                                placeholder="Contraseña"
+                                                placeholder="••••••••"
                                                 required
                                             />
-                                        </Form.Group>
+                                        </div>
+                                    </div>
 
-                                        <Form.Group className="mb-4">
-                                            <Form.Label>Confirmar Contraseña</Form.Label>
-                                            <Form.Control
+                                    <div className="input-group">
+                                        <label>Confirmar Contraseña</label>
+                                        <div className="input-wrapper">
+                                            <i className="bi bi-shield-lock"></i>
+                                            <input
                                                 type="password"
                                                 name="confirmPassword"
                                                 value={registerData.confirmPassword}
                                                 onChange={handleRegisterChange}
-                                                placeholder="Confirma tu contraseña"
+                                                placeholder="••••••••"
                                                 required
                                             />
-                                        </Form.Group>
-
-                                        <Button
-                                            variant="success"
-                                            type="submit"
-                                            className="w-100"
-                                            disabled={loading}
-                                        >
-                                            {loading ? 'Cargando...' : 'Registrarse'}
-                                        </Button>
-                                    </Form>
-
-                                    <div className="text-center mt-3 text-muted">
-                                        <p>¿Ya tienes cuenta? Usa la pestaña de Iniciar Sesión</p>
+                                        </div>
                                     </div>
-                                </Tab>
-                            </Tabs>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+
+                                    <button type="submit" className="premium-btn primary-btn" disabled={loading}>
+                                        {loading ? <span className="loader"></span> : 'Crear Cuenta'}
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
 export default Login;
+
