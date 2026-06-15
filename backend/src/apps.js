@@ -12,7 +12,7 @@ app.use(express.json());
 // Rutas
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/salas', require('./routes/salaRoutes'));
-app.use('/api/reservas', require('./routes/reservaRoutes'));
+app.use('/api/reservas', require('./routes/reservaRoutes.js'));
 
 // Manejador de errores genérico
 app.use((err, req, res, next) => {
