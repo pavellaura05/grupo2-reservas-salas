@@ -7,7 +7,9 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.use(authMiddleware);
 
 router.post('/', reservaController.crearReserva);
-router.get('/', reservaController.listarReservasPorFecha);
+router.get('/', reservaController.listarReservas);
+router.get('/:id', reservaController.obtenerReserva);
+router.put('/:id', reservaController.actualizarReserva);
 router.delete('/:id', reservaController.cancelarReserva);
 
 module.exports = router;

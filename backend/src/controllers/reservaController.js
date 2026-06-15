@@ -3,13 +3,13 @@ const { Op } = require('sequelize');
 
 exports.crearReserva = async (req, res) => {
   try {
-    const { sala_id, fecha, hora_inicio, hora_fin } = req.body;
-    const usuario_id = req.user.id;
+    const { SalaId, fecha, hora_inicio, hora_fin } = req.body;
+    const UsuarioId = req.user.id;
 
     // Verificar conflicto
     const conflicto = await Reserva.findOne({
       where: {
-        sala_id,
+        SalaId,
         fecha,
         estado: 'activa',
         [Op.or]: [
@@ -30,8 +30,8 @@ exports.crearReserva = async (req, res) => {
     }
 
     const reserva = await Reserva.create({
-      sala_id,
-      usuario_id,
+      SalaId,
+      UsuarioId,
       fecha,
       hora_inicio,
       hora_fin,
@@ -44,14 +44,15 @@ exports.crearReserva = async (req, res) => {
   }
 };
 
-exports.listarReservasPorFecha = async (req, res) => {
+exports.listarReservas = async (req, res) => {
   try {
     const { fecha } = req.query;
-    if (!fecha) {
-      return res.status(400).json({ error: 'Se requiere fecha' });
+    const whereClause = { estado: 'activa' };
+    if (fecha) {
+      whereClause.fecha = fecha;
     }
     const reservas = await Reserva.findAll({
-      where: { fecha, estado: 'activa' },
+      where: whereClause,
       include: [
         { model: Sala, attributes: ['nombre', 'capacidad'] },
         { model: Usuario, attributes: ['nombre', 'email'] }
@@ -64,6 +65,37 @@ exports.listarReservasPorFecha = async (req, res) => {
   }
 };
 
+exports.obtenerReserva = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reserva = await Reserva.findByPk(id, {
+      include: [
+        { model: Sala, attributes: ['nombre', 'capacidad'] },
+        { model: Usuario, attributes: ['nombre', 'email'] }
+      ]
+    });
+    if (!reserva) return res.status(404).json({ error: 'Reserva no encontrada' });
+    res.json(reserva);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.actualizarReserva = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reserva = await Reserva.findByPk(id);
+    if (!reserva) return res.status(404).json({ error: 'Reserva no encontrada' });
+    if (reserva.UsuarioId !== req.user.id && req.user.rol !== 'admin') {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    await reserva.update(req.body);
+    res.json(reserva);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.cancelarReserva = async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,7 +103,7 @@ exports.cancelarReserva = async (req, res) => {
     if (!reserva) {
       return res.status(404).json({ error: 'Reserva no encontrada' });
     }
-    if (reserva.usuario_id !== req.user.id && req.user.rol !== 'admin') {
+    if (reserva.UsuarioId !== req.user.id && req.user.rol !== 'admin') {
       return res.status(403).json({ error: 'No autorizado' });
     }
     reserva.estado = 'cancelada';
